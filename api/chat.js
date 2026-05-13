@@ -22,10 +22,18 @@ const handler = async (req, res) => {
     });
 
     const data = await response.json();
-    const reply = data.content?.[0]?.text || "Não foi possível responder agora.";
+    console.log("STATUS:", response.status);
+    console.log("DATA:", JSON.stringify(data).slice(0, 300));
+    
+    if (data.error) {
+      return res.status(200).json({ reply: "Erro da API: " + data.error.message });
+    }
+    
+    const reply = data.content?.[0]?.text || "Sem resposta";
     return res.status(200).json({ reply });
   } catch (error) {
-    return res.status(500).json({ error: "Erro interno." });
+    console.log("ERRO:", error.message);
+    return res.status(200).json({ reply: "Erro: " + error.message });
   }
 };
 
