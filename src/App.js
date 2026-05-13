@@ -332,7 +332,7 @@ export default function IntelCelestial() {
         }),
       });
       const data = await res.json();
-      const reply = data.reply || "Desculpe, não consegui responder agora.";
+      const reply = data.reply || data.content?.[0]?.text || "Desculpe, não consegui responder agora.";
       setMessages(m => ({ ...m, [mode]: [...newMsgs, { role: "assistant", content: reply }] }));
     } catch {
       setMessages(m => ({ ...m, [mode]: [...newMsgs, { role: "assistant", content: "Erro de conexão. Tente novamente." }] }));
