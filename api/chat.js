@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+const handler = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -25,6 +25,8 @@ export default async function handler(req, res) {
     const reply = data.content?.[0]?.text || "Não foi possível responder agora.";
     return res.status(200).json({ reply });
   } catch (error) {
-    return res.status(500).json({ error: "Erro interno do servidor." });
+    return res.status(500).json({ error: "Erro interno." });
   }
-}
+};
+
+module.exports = handler;
