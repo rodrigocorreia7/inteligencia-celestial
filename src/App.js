@@ -12,17 +12,12 @@ REGRAS:
 7. Nunca invente referências
 
 REGRAS DE CITAÇÃO — MUITO IMPORTANTES:
-
 VERSÍCULOS BÍBLICOS: Cite o autor humano pelo nome e apresente o texto diretamente no fluxo da frase. NÃO use nota numerada.
 Exemplos corretos:
 - "Paulo nos lembra que não precisamos carregar isso sozinhos: 'Não andeis ansiosos por coisa alguma' (Filipenses 4:6)."
-- "Jesus disse que viria buscar os seus: 'Na casa de meu Pai há muitas moradas' (João 14:2)."
-- "Davi escreveu com muita honestidade: 'Até quando, Senhor, te esquecerás de mim?' (Salmos 13:1)."
 
 ESCRITOS DEVOCIONAIS (EGW): Incorpore o conteúdo naturalmente no texto, como sabedoria devocional, SEM mencionar o nome da autora. Coloque apenas a fonte numa nota numerada [NOTA: fonte aqui].
-Exemplos corretos:
-- "Há uma perspectiva devocional muito reconfortante: os sentimentos não são uma prova segura — não devemos depender dos sentimentos, mas da fé. [NOTA: Testemunhos para a Igreja, vol. 1, p. 167]"
-- "Uma reflexão devocional ilumina bem isso: a oração é a chave na mão da fé que abre o tesouro do céu. [NOTA: O Caminho a Cristo, p. 93]"
+Exemplo: "Há uma perspectiva devocional muito reconfortante: os sentimentos não são uma prova segura. [NOTA: Testemunhos para a Igreja, vol. 1, p. 167]"
 
 PERGUNTAS DE CONTINUAÇÃO — sempre ao final:
 [Q1: pergunta natural aqui]
@@ -41,17 +36,8 @@ ESTRUTURA DA RESPOSTA — siga sempre esta ordem:
 5. Conclusão esperançosa: 2-3 frases que fecham com encorajamento
 
 REGRAS DE CITAÇÃO — MUITO IMPORTANTES:
-
 VERSÍCULOS BÍBLICOS: Cite o autor humano pelo nome e apresente o texto diretamente. NÃO use nota numerada.
-Exemplos:
-- "Paulo é direto: 'O salário do pecado é a morte, mas o dom gratuito de Deus é a vida eterna' (Romanos 6:23)."
-- "Eclesiastes registra com clareza: 'Os mortos não sabem coisa alguma' (Eclesiastes 9:5)."
-- "Jesus prometeu: 'Eu sou a ressurreição e a vida' (João 11:25)."
-
 ESCRITOS DEVOCIONAIS (EGW): Incorpore como sabedoria devocional adventista, SEM mencionar o nome da autora. Use nota numerada apenas para a fonte.
-Exemplos:
-- "A literatura devocional adventista traz uma visão poderosa: a morte é um sono profundo, sem consciência, e a ressurreição será como acordar de manhã — imediata na percepção de quem dorme. [NOTA: O Grande Conflito, p. 550]"
-- "Uma reflexão devocional resume bem: Cristo em nós é a esperança da glória — não uma esperança distante, mas uma presença viva agora. [NOTA: O Desejado de Todas as Nações, p. 25]"
 
 Tom: professor apaixonado que ensina com clareza e entusiasmo — acessível para jovens.
 Nunca invente referências.
@@ -79,6 +65,22 @@ const INITIAL_ESTUDO = [
   "O que são os dons do Espírito Santo?",
 ];
 
+// Temas de cores (Safe Space Design)
+const THEMES = {
+  conselho: {
+    primary: "#10b981", // Verde esmeralda suave
+    bgUser: "rgba(16, 185, 129, 0.15)",
+    borderUser: "rgba(16, 185, 129, 0.3)",
+    textHighlight: "#34d399",
+  },
+  estudo: {
+    primary: "#6366f1", // Azul índigo
+    bgUser: "rgba(99, 102, 241, 0.15)",
+    borderUser: "rgba(99, 102, 241, 0.3)",
+    textHighlight: "#818cf8",
+  }
+};
+
 function parseResponse(text) {
   const notes = [];
   const followUps = [];
@@ -88,14 +90,12 @@ function parseResponse(text) {
   while ((qMatch = qRegex.exec(text)) !== null) followUps.push(qMatch[1].trim());
   let clean = text.replace(/\[Q\d+:[^\]]+\]/g, "").trim();
 
-  // [NOTA: source] — EGW devocional, only source in footnote
   let noteIndex = 1;
   clean = clean.replace(/\[NOTA:\s*([^\]]+)\]/g, (_, source) => {
     notes.push({ num: noteIndex, source: source.trim() });
     return `[${noteIndex++}]`;
   });
 
-  // Legacy [REF: quote | source] fallback
   clean = clean.replace(/\[REF:\s*([^|]+)\|\s*([^\]]+)\]/g, (_, quote, source) => {
     notes.push({ num: noteIndex, source: source.trim(), quote: quote.trim() });
     return `[${noteIndex++}]`;
@@ -105,10 +105,12 @@ function parseResponse(text) {
   return { clean, notes, followUps };
 }
 
-function renderTextWithRefs(clean, notes, onRefClick) {
+function renderTextWithRefs(clean, notes, onRefClick, mode) {
   const parts = [];
   const numRegex = /\[(\d+)\]/g;
   let last = 0, m;
+  const theme = THEMES[mode];
+
   while ((m = numRegex.exec(clean)) !== null) {
     if (m.index > last) parts.push({ type: "text", value: clean.slice(last, m.index) });
     parts.push({ type: "note", num: parseInt(m[1]) });
@@ -119,28 +121,28 @@ function renderTextWithRefs(clean, notes, onRefClick) {
   return parts.map((p, i) => {
     if (p.type === "note") {
       return (
-        <sup key={i}>
+        <sup key={i} style={{ margin: "0 2px" }}>
           <button onClick={() => onRefClick(notes.find(n => n.num === p.num))} style={{
-            background: "rgba(201,168,76,0.18)", border: "1px solid rgba(201,168,76,0.38)",
-            borderRadius: 4, padding: "0 5px", fontSize: 10.5, color: "#c9a84c",
-            cursor: "pointer", fontFamily: "'Nunito',sans-serif", fontWeight: 700, lineHeight: 1.5,
+            background: `${theme.primary}22`, border: `1px solid ${theme.primary}44`,
+            borderRadius: 6, padding: "2px 6px", fontSize: 11, color: theme.textHighlight,
+            cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600,
+            transition: "all 0.2s"
           }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(201,168,76,0.32)"}
-            onMouseLeave={e => e.currentTarget.style.background = "rgba(201,168,76,0.18)"}
+            onMouseEnter={e => e.currentTarget.style.background = `${theme.primary}44`}
+            onMouseLeave={e => e.currentTarget.style.background = `${theme.primary}22`}
           >{p.num}</button>
         </sup>
       );
     }
-    // Render section headers
     const sectionParts = p.value.split(/§§§([^§]+)§§§/);
     return sectionParts.map((sp, j) => {
       if (j % 2 === 1) {
         return (
           <div key={`${i}-${j}`} style={{
-            fontFamily: "'Cormorant Garamond',serif", fontSize: 13,
-            color: "#c9a84c", letterSpacing: "0.1em", textTransform: "uppercase",
-            marginTop: 16, marginBottom: 6, paddingBottom: 4,
-            borderBottom: "1px solid rgba(201,168,76,0.15)",
+            fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700,
+            color: theme.textHighlight, textTransform: "uppercase", letterSpacing: "0.05em",
+            marginTop: 24, marginBottom: 8, paddingBottom: 4,
+            borderBottom: `1px solid ${theme.primary}22`,
           }}>{sp}</div>
         );
       }
@@ -150,77 +152,69 @@ function renderTextWithRefs(clean, notes, onRefClick) {
 }
 
 function MessageBubble({ msg, onRefClick, onFollowUp, mode }) {
+  const theme = THEMES[mode];
+
   if (msg.role === "user") {
     return (
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", margin: "12px 0" }}>
         <div style={{
-          maxWidth: "72%",
-          background: mode === "estudo" ? "rgba(100,150,220,0.13)" : "rgba(201,168,76,0.13)",
-          border: `1px solid ${mode === "estudo" ? "rgba(100,150,220,0.22)" : "rgba(201,168,76,0.22)"}`,
-          borderRadius: "18px 18px 4px 18px",
-          padding: "12px 17px",
-          fontFamily: "'Nunito',sans-serif", fontSize: 14.5, color: "#e8d5a3", lineHeight: 1.65,
+          maxWidth: "80%", background: theme.bgUser, border: `1px solid ${theme.borderUser}`,
+          borderRadius: "18px 18px 4px 18px", padding: "14px 18px",
+          fontFamily: "'Nunito', sans-serif", fontSize: 15, color: "#f8fafc", lineHeight: 1.6,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
         }}>{msg.content}</div>
       </div>
     );
   }
 
   const { clean, notes, followUps } = parseResponse(msg.content);
-  const avatarColor = mode === "estudo" ? "rgba(100,150,220,0.15)" : "rgba(201,168,76,0.12)";
-  const avatarBorder = mode === "estudo" ? "rgba(100,150,220,0.3)" : "rgba(201,168,76,0.25)";
-  const iconFill = mode === "estudo" ? "#6496dc" : "#c9a84c";
 
   return (
-    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+    <div style={{ display: "flex", gap: 12, alignItems: "flex-start", margin: "16px 0" }}>
       <div style={{
-        width: 33, height: 33, borderRadius: "50%",
-        background: avatarColor, border: `1px solid ${avatarBorder}`,
-        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        width: 36, height: 36, borderRadius: "50%", background: `${theme.primary}15`,
+        border: `1px solid ${theme.primary}33`, display: "flex", alignItems: "center", 
+        justifyContent: "center", flexShrink: 0, marginTop: 4
       }}>
         {mode === "estudo" ? (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={iconFill} strokeWidth="1.8" strokeLinecap="round"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke={iconFill} strokeWidth="1.8" strokeLinecap="round"/>
-          </svg>
+          <span style={{ fontSize: 16 }}>📖</span>
         ) : (
-          <svg width="14" height="14" viewBox="0 0 40 40">
-            <rect x="18.5" y="8" width="3" height="24" rx="1.5" fill={iconFill}/>
-            <rect x="11" y="15" width="18" height="3" rx="1.5" fill={iconFill}/>
-          </svg>
+          <span style={{ fontSize: 16 }}>🌱</span>
         )}
       </div>
 
-      <div style={{ maxWidth: "80%", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ maxWidth: "85%", display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{
-          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "18px 18px 18px 4px", padding: "14px 18px",
-          fontFamily: "'Nunito',sans-serif", fontSize: 14.5, color: "#c8b98a", lineHeight: 1.8,
+          background: "#1e293b", border: "1px solid #334155",
+          borderRadius: "18px 18px 18px 4px", padding: "16px 20px",
+          fontFamily: "'Nunito', sans-serif", fontSize: 15, color: "#e2e8f0", lineHeight: 1.7,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
         }}>
-          {renderTextWithRefs(clean, notes, onRefClick)}
+          {renderTextWithRefs(clean, notes, onRefClick, mode)}
         </div>
 
         {followUps.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
             {followUps.map((q, i) => (
               <button key={i} onClick={() => onFollowUp(q)} style={{
-                background: "transparent",
-                border: `1px solid ${mode === "estudo" ? "rgba(100,150,220,0.18)" : "rgba(201,168,76,0.16)"}`,
-                borderRadius: 20, padding: "7px 15px",
-                color: "#6b5c3e", fontFamily: "'Nunito',sans-serif",
-                fontSize: 13, cursor: "pointer", textAlign: "left",
-                transition: "all 0.18s", lineHeight: 1.4,
+                background: "#0f172a", border: `1px solid #334155`,
+                borderRadius: 20, padding: "8px 16px", color: "#94a3b8",
+                fontFamily: "'Nunito', sans-serif", fontSize: 13, cursor: "pointer", 
+                transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6
               }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = mode === "estudo" ? "#6496dc" : "#c9a84c";
-                  e.currentTarget.style.color = mode === "estudo" ? "#6496dc" : "#c9a84c";
-                  e.currentTarget.style.background = mode === "estudo" ? "rgba(100,150,220,0.07)" : "rgba(201,168,76,0.07)";
+                  e.currentTarget.style.borderColor = theme.primary;
+                  e.currentTarget.style.color = theme.textHighlight;
+                  e.currentTarget.style.background = `${theme.primary}11`;
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = mode === "estudo" ? "rgba(100,150,220,0.18)" : "rgba(201,168,76,0.16)";
-                  e.currentTarget.style.color = "#6b5c3e";
-                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "#334155";
+                  e.currentTarget.style.color = "#94a3b8";
+                  e.currentTarget.style.background = "#0f172a";
                 }}
-              >{q}</button>
+              >
+                <span>↳</span> {q}
+              </button>
             ))}
           </div>
         )}
@@ -229,68 +223,64 @@ function MessageBubble({ msg, onRefClick, onFollowUp, mode }) {
   );
 }
 
-function RefPanel({ activeRef, onClose }) {
+function RefPanel({ activeRef, onClose, mode }) {
   if (!activeRef) return null;
+  const theme = THEMES[mode];
+
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 40 }} />
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 40 }} />
       <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        background: "#161410", border: "1px solid #2a2518",
-        borderRadius: "20px 20px 0 0", padding: "22px 24px 32px",
-        zIndex: 50, animation: "slideUp 0.25s ease",
-        maxWidth: 600, margin: "0 auto",
+        position: "fixed", bottom: 0, left: 0, right: 0, background: "#0f172a",
+        borderTop: `1px solid ${theme.primary}33`, borderRadius: "24px 24px 0 0", 
+        padding: "24px 24px 36px", zIndex: 50, animation: "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        maxWidth: 600, margin: "0 auto", boxShadow: "0 -10px 40px rgba(0,0,0,0.5)"
       }}>
-        <div style={{ width: 38, height: 3, background: "#2e2a1c", borderRadius: 2, margin: "0 auto 18px" }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <div style={{ width: 40, height: 4, background: "#334155", borderRadius: 2, margin: "0 auto 24px" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div style={{
-            width: 26, height: 26, borderRadius: "50%",
-            background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)",
+            width: 28, height: 28, borderRadius: "50%", background: `${theme.primary}22`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'Nunito',sans-serif", fontSize: 11, color: "#c9a84c", fontWeight: 700,
+            fontFamily: "'Inter', sans-serif", fontSize: 12, color: theme.textHighlight, fontWeight: 700,
           }}>{activeRef.num}</div>
-          <span style={{ fontFamily: "'Nunito',sans-serif", fontSize: 11, color: "#4a3f2a", letterSpacing: "0.12em", textTransform: "uppercase" }}>Referência</span>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#64748b", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Fonte de Inspiração
+          </span>
         </div>
+        
         {activeRef.quote && (
-          <p style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 20, fontStyle: "italic", color: "#e8d5a3", lineHeight: 1.65, marginBottom: 14 }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, fontStyle: "italic", color: "#f1f5f9", lineHeight: 1.6, marginBottom: 16, paddingLeft: 12, borderLeft: `3px solid ${theme.primary}` }}>
             "{activeRef.quote}"
           </p>
         )}
-        <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: 13, color: "#c9a84c", borderTop: activeRef.quote ? "1px solid #2a2518" : "none", paddingTop: activeRef.quote ? 12 : 0 }}>
-          📖 {activeRef.source}
+        
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 15, color: theme.textHighlight, fontWeight: 500 }}>
+          📚 {activeRef.source}
         </p>
+        
         <button onClick={onClose} style={{
-          marginTop: 18, width: "100%",
-          background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.18)",
-          borderRadius: 12, padding: "10px", color: "#7a6844",
-          fontFamily: "'Nunito',sans-serif", fontSize: 14, cursor: "pointer",
-        }}>Fechar</button>
+          marginTop: 24, width: "100%", background: `${theme.primary}22`, 
+          border: "none", borderRadius: 12, padding: "14px", color: theme.textHighlight,
+          fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer",
+          transition: "background 0.2s"
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = `${theme.primary}44`}
+        onMouseLeave={e => e.currentTarget.style.background = `${theme.primary}22`}
+        >Entendido</button>
       </div>
     </>
   );
 }
 
 const TypingDots = ({ mode }) => {
-  const color = mode === "estudo" ? "#6496dc" : "#c9a84c";
-  const bg = mode === "estudo" ? "rgba(100,150,220,0.12)" : "rgba(201,168,76,0.12)";
-  const border = mode === "estudo" ? "rgba(100,150,220,0.25)" : "rgba(201,168,76,0.25)";
+  const theme = THEMES[mode];
   return (
-    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-      <div style={{ width: 33, height: 33, borderRadius: "50%", background: bg, border: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        {mode === "estudo" ? (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-          </svg>
-        ) : (
-          <svg width="14" height="14" viewBox="0 0 40 40">
-            <rect x="18.5" y="8" width="3" height="24" rx="1.5" fill={color}/>
-            <rect x="11" y="15" width="18" height="3" rx="1.5" fill={color}/>
-          </svg>
-        )}
+    <div style={{ display: "flex", gap: 12, alignItems: "center", margin: "16px 0" }}>
+      <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${theme.primary}15`, border: `1px solid ${theme.primary}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 16, animation: "pulse 2s infinite" }}>{mode === "estudo" ? "📖" : "🌱"}</span>
       </div>
-      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "18px 18px 18px 4px", padding: "13px 17px", display: "flex", gap: 5, alignItems: "center" }}>
-        {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: color, animation: "bounce 1.2s infinite", animationDelay: `${i*0.2}s` }} />)}
+      <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "18px 18px 18px 4px", padding: "16px 20px", display: "flex", gap: 6 }}>
+        {[0, 1, 2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: theme.textHighlight, animation: "bounce 1.4s infinite ease-in-out", animationDelay: `${i * 0.16}s`, opacity: 0.7 }} />)}
       </div>
     </div>
   );
@@ -308,6 +298,7 @@ export default function IntelCelestial() {
 
   const currentMessages = messages[mode];
   const isStarted = started[mode];
+  const theme = THEMES[mode];
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading, mode]);
 
@@ -335,184 +326,176 @@ export default function IntelCelestial() {
       const reply = data.reply || data.content?.[0]?.text || "Desculpe, não consegui responder agora.";
       setMessages(m => ({ ...m, [mode]: [...newMsgs, { role: "assistant", content: reply }] }));
     } catch {
-      setMessages(m => ({ ...m, [mode]: [...newMsgs, { role: "assistant", content: "Erro de conexão. Tente novamente." }] }));
+      setMessages(m => ({ ...m, [mode]: [...newMsgs, { role: "assistant", content: "Houve um erro de conexão. Podemos tentar novamente?" }] }));
     }
     setLoading(false);
   };
 
-  const accentColor = mode === "estudo" ? "#6496dc" : "#c9a84c";
   const initialQs = mode === "estudo" ? INITIAL_ESTUDO : INITIAL_CONSELHO;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0f0e0b", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "#0b0f19", display: "flex", flexDirection: "column" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,400&family=Nunito:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-7px)} }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-        .msg { animation: fadeUp 0.36s ease forwards; }
+        @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        .msg { animation: fadeUp 0.4s ease-out forwards; }
         textarea { outline: none !important; }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-thumb { background: #2a2518; border-radius: 2px; }
-        .mode-btn { transition: all 0.22s; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        body { background-color: #0b0f19; }
       `}</style>
 
-      {/* Header */}
-      <div style={{ borderBottom: "1px solid #1a1810", background: "#0f0e0b", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 20 }}>
-        <div style={{ animation: "float 4s ease-in-out infinite" }}>
-          <svg width="32" height="32" viewBox="0 0 40 40">
-            <circle cx="20" cy="20" r="17" fill="none" stroke={`${accentColor}55`} strokeWidth="1.2"/>
-            <rect x="18.5" y="9" width="3" height="22" rx="1.5" fill={accentColor}/>
-            <rect x="12" y="16" width="16" height="3" rx="1.5" fill={accentColor}/>
-          </svg>
+      {/* Header Fixo e Moderno */}
+      <div style={{ 
+        background: "rgba(11, 15, 25, 0.85)", backdropFilter: "blur(12px)",
+        borderBottom: "1px solid #1e293b", padding: "14px 24px", 
+        display: "flex", alignItems: "center", gap: 16, position: "sticky", top: 0, zIndex: 20 
+      }}>
+        <div style={{ 
+          width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${theme.primary}44, ${theme.primary}11)`,
+          border: `1px solid ${theme.primary}55`, display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: `0 0 15px ${theme.primary}22`
+        }}>
+          <span style={{ fontSize: 20 }}>{mode === "estudo" ? "📖" : "🌱"}</span>
         </div>
         <div>
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 19, color: "#e8d5a3", fontWeight: 600, letterSpacing: "0.04em" }}>Inteligência Celestial</div>
-          <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 10, color: "#3a3020", letterSpacing: "0.14em", textTransform: "uppercase" }}>Bíblia & Espírito de Profecia</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: "#f8fafc", fontWeight: 700 }}>
+            Inteligência Celestial
+          </div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: theme.textHighlight, fontWeight: 500, letterSpacing: "0.05em" }}>
+            Apoio Espiritual Seguro
+          </div>
         </div>
 
-        {/* Mode Toggle */}
-        <div style={{ marginLeft: "auto", display: "flex", background: "#161410", border: "1px solid #2a2518", borderRadius: 20, padding: 3, gap: 2 }}>
+        {/* Toggle de Modos */}
+        <div style={{ marginLeft: "auto", display: "flex", background: "#0f172a", border: "1px solid #1e293b", borderRadius: 12, padding: 4, gap: 4 }}>
           {[
-            { key: "conselho", label: "💬 Conselho", icon: "💬" },
-            { key: "estudo", label: "📖 Estudo", icon: "📖" },
+            { key: "conselho", label: "Conselho" },
+            { key: "estudo", label: "Estudo" },
           ].map(({ key, label }) => (
-            <button key={key} className="mode-btn" onClick={() => setMode(key)} style={{
-              background: mode === key ? (key === "estudo" ? "rgba(100,150,220,0.2)" : "rgba(201,168,76,0.18)") : "transparent",
-              border: mode === key ? `1px solid ${key === "estudo" ? "rgba(100,150,220,0.35)" : "rgba(201,168,76,0.35)"}` : "1px solid transparent",
-              borderRadius: 16, padding: "5px 13px",
-              color: mode === key ? (key === "estudo" ? "#6496dc" : "#c9a84c") : "#4a3f2a",
-              fontFamily: "'Nunito',sans-serif", fontSize: 12, fontWeight: 600,
-              cursor: "pointer", whiteSpace: "nowrap",
+            <button key={key} onClick={() => setMode(key)} style={{
+              background: mode === key ? THEMES[key].primary : "transparent",
+              border: "none", borderRadius: 8, padding: "6px 14px",
+              color: mode === key ? "#ffffff" : "#64748b",
+              fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600,
+              cursor: "pointer", transition: "all 0.3s ease",
+              boxShadow: mode === key ? `0 2px 8px ${THEMES[key].primary}66` : "none"
             }}>{label}</button>
           ))}
         </div>
       </div>
 
-      {/* Body */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", maxWidth: 720, margin: "0 auto", width: "100%", padding: "0 16px" }}>
+      {/* Área Principal */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", maxWidth: 800, margin: "0 auto", width: "100%", padding: "0 20px" }}>
 
         {!isStarted ? (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", gap: 24 }}>
-            <div style={{ textAlign: "center" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0", gap: 32 }}>
+            <div style={{ textAlign: "center", animation: "fadeUp 0.6s ease-out" }}>
               <div style={{
-                display: "inline-block", background: mode === "estudo" ? "rgba(100,150,220,0.1)" : "rgba(201,168,76,0.1)",
-                border: `1px solid ${mode === "estudo" ? "rgba(100,150,220,0.2)" : "rgba(201,168,76,0.2)"}`,
-                borderRadius: 20, padding: "4px 14px", marginBottom: 14,
-                fontFamily: "'Nunito',sans-serif", fontSize: 11,
-                color: accentColor, letterSpacing: "0.14em", textTransform: "uppercase",
+                display: "inline-block", background: `${theme.primary}15`, border: `1px solid ${theme.primary}33`,
+                borderRadius: 20, padding: "6px 16px", marginBottom: 20,
+                fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600,
+                color: theme.textHighlight, letterSpacing: "0.05em", textTransform: "uppercase",
               }}>
-                {mode === "estudo" ? "📖 Modo Estudo Bíblico" : "💬 Modo Conselho Espiritual"}
+                {mode === "estudo" ? "Modo de Estudo Bíblico" : "Espaço Seguro para Desabafar"}
               </div>
-              <h1 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 38, color: "#e8d5a3", fontWeight: 300, lineHeight: 1.15, marginBottom: 8 }}>
-                {mode === "estudo" ? "Estude a Palavra" : "Fale o que sente"}
+              <h1 style={{ fontFamily: "'Inter', sans-serif", fontSize: 42, color: "#f8fafc", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 12 }}>
+                {mode === "estudo" ? "Qual tema vamos explorar?" : "Como você está se sentindo?"}
               </h1>
-              <div style={{ width: 44, height: 1, background: `linear-gradient(90deg,transparent,${accentColor},transparent)`, margin: "10px auto" }} />
-              <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: 14, color: "#5a4c33", lineHeight: 1.7, maxWidth: 380 }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 16, color: "#94a3b8", lineHeight: 1.6, maxWidth: 500, margin: "0 auto" }}>
                 {mode === "estudo"
-                  ? <>Explore qualquer tema bíblico com <em style={{ color: accentColor }}>versículos, contexto teológico</em> e <em style={{ color: accentColor }}>escritos de Ellen White</em></>
-                  : <>Um espaço seguro para buscar orientação na <em style={{ color: accentColor }}>Bíblia</em> e nos escritos de <em style={{ color: accentColor }}>Ellen G. White</em></>
+                  ? <>Mergulhe nas Escrituras e nos escritos de <span style={{ color: theme.textHighlight, fontWeight: 600 }}>Ellen G. White</span> com clareza e profundidade.</>
+                  : <>Um ambiente livre de julgamentos, guiado pela <span style={{ color: theme.textHighlight, fontWeight: 600 }}>Bíblia</span> para te ouvir e orientar.</>
                 }
               </p>
             </div>
 
-            <div style={{ background: `rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.05)`, border: `1px solid rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.12)`, borderRadius: 14, padding: "15px 20px", maxWidth: 440, width: "100%" }}>
-              <p style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 16.5, color: accentColor, fontStyle: "italic", textAlign: "center", lineHeight: 1.65 }}>
-                {mode === "estudo"
-                  ? '"Toda a Escritura é divinamente inspirada e proveitosa para ensinar, para redarguir, para corrigir."'
-                  : '"A tua palavra é lâmpada para os meus pés e luz para o meu caminho."'}
-              </p>
-              <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: 11, color: "#3a3020", textAlign: "right", marginTop: 7 }}>
-                {mode === "estudo" ? "— 2 Timóteo 3:16" : "— Salmos 119:105"}
-              </p>
-            </div>
-
-            <div style={{ width: "100%", maxWidth: 500 }}>
-              <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: 10.5, color: "#3a3020", textAlign: "center", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
-                {mode === "estudo" ? "Temas para explorar" : "Por onde começar?"}
-              </p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {/* Grid de Sugestões */}
+            <div style={{ width: "100%", maxWidth: 600, animation: "fadeUp 0.8s ease-out" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {initialQs.map((q, i) => (
                   <button key={i} onClick={() => sendMessage(q)} style={{
-                    background: `rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.04)`,
-                    border: `1px solid rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.14)`,
-                    borderRadius: 10, padding: "10px 13px", color: "#6b5c3e",
-                    fontFamily: "'Nunito',sans-serif", fontSize: 13, cursor: "pointer",
-                    textAlign: "left", lineHeight: 1.4, transition: "all 0.18s",
+                    background: "#1e293b", border: "1px solid #334155",
+                    borderRadius: 16, padding: "16px 20px", color: "#e2e8f0",
+                    fontFamily: "'Nunito', sans-serif", fontSize: 14, fontWeight: 500, cursor: "pointer",
+                    textAlign: "left", lineHeight: 1.4, transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    display: "flex", justifyContent: "space-between", alignItems: "center"
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor; e.currentTarget.style.background = `rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.09)`; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = `rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.14)`; e.currentTarget.style.color = "#6b5c3e"; e.currentTarget.style.background = `rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.04)`; }}
-                  >{q}</button>
+                    onMouseEnter={e => { 
+                      e.currentTarget.style.borderColor = theme.primary; 
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = `0 4px 12px ${theme.primary}15`;
+                    }}
+                    onMouseLeave={e => { 
+                      e.currentTarget.style.borderColor = "#334155"; 
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <span>{q}</span>
+                    <span style={{ color: theme.textHighlight, fontSize: 18 }}>→</span>
+                  </button>
                 ))}
               </div>
             </div>
           </div>
         ) : (
-          <div style={{ flex: 1, overflowY: "auto", padding: "20px 0", display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "24px 0", display: "flex", flexDirection: "column" }}>
             {currentMessages.map((msg, i) => (
               <div key={i} className="msg">
                 <MessageBubble msg={msg} onRefClick={setActiveRef} onFollowUp={sendMessage} mode={mode} />
               </div>
             ))}
             {loading && <div className="msg"><TypingDots mode={mode} /></div>}
-            <div ref={bottomRef} />
+            <div ref={bottomRef} style={{ height: 20 }} />
           </div>
         )}
 
-        {/* Input */}
-        <div style={{ padding: "12px 0 16px", borderTop: isStarted ? "1px solid #1a1810" : "none" }}>
-          {isStarted && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-              {initialQs.slice(0, 3).map((q, i) => (
-                <button key={i} onClick={() => sendMessage(q)} style={{
-                  background: "transparent", border: `1px solid rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.14)`,
-                  borderRadius: 16, padding: "4px 11px", color: "#4a3f2a",
-                  fontFamily: "'Nunito',sans-serif", fontSize: 11.5, cursor: "pointer", transition: "all 0.18s",
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = `rgba(${mode === "estudo" ? "100,150,220" : "201,168,76"},0.14)`; e.currentTarget.style.color = "#4a3f2a"; }}
-                >{q}</button>
-              ))}
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", background: "rgba(255,255,255,0.03)", border: "1px solid #201e18", borderRadius: 16, padding: "8px 8px 8px 15px" }}>
+        {/* Input Area */}
+        <div style={{ padding: "16px 0 24px", background: "#0b0f19", position: "sticky", bottom: 0 }}>
+          <div style={{ 
+            display: "flex", alignItems: "flex-end", background: "#1e293b", 
+            border: "1px solid #334155", borderRadius: 24, padding: "10px 12px 10px 20px",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.2)", transition: "border-color 0.3s"
+          }}>
             <textarea
               ref={textareaRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              placeholder={mode === "estudo" ? "Qual tema você quer estudar?" : "Escreva sua dúvida espiritual..."}
+              placeholder={mode === "estudo" ? "Qual tema da Bíblia você quer pesquisar?" : "Escreva o que está no seu coração..."}
               rows={1}
               style={{
                 flex: 1, background: "transparent", border: "none",
-                padding: "5px 2px", color: "#e8d5a3",
-                fontFamily: "'Nunito',sans-serif", fontSize: 14.5,
-                resize: "none", maxHeight: 120, lineHeight: 1.62,
+                padding: "8px 0", color: "#f8fafc", fontFamily: "'Nunito', sans-serif", fontSize: 15,
+                resize: "none", maxHeight: 150, lineHeight: 1.5,
               }}
-              onInput={e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
+              onInput={e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 150) + "px"; }}
             />
             <button onClick={() => sendMessage()} disabled={!input.trim() || loading} style={{
-              width: 38, height: 38, borderRadius: 11, border: "none",
-              background: input.trim() && !loading ? accentColor : "#1a1810",
-              cursor: input.trim() && !loading ? "pointer" : "default",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0, transition: "all 0.18s",
+              width: 44, height: 44, borderRadius: 16, border: "none", marginLeft: 12,
+              background: input.trim() && !loading ? theme.primary : "#334155",
+              cursor: input.trim() && !loading ? "pointer" : "not-allowed",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              transition: "all 0.2s", opacity: input.trim() && !loading ? 1 : 0.5
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M22 2L11 13" stroke={input.trim() && !loading ? "#0f0e0b" : "#2e2a1c"} strokeWidth="2.2" strokeLinecap="round"/>
-                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke={input.trim() && !loading ? "#0f0e0b" : "#2e2a1c"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>
-          <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: 10, color: "#272318", textAlign: "center", marginTop: 8 }}>
-            ✝ Não substitui aconselhamento pastoral profissional
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#64748b", textAlign: "center", marginTop: 12, fontWeight: 500 }}>
+            A Inteligência Celestial é um apoio espiritual e não substitui o acompanhamento pastoral ou psicológico profissional.
           </p>
         </div>
       </div>
 
-      <RefPanel activeRef={activeRef} onClose={() => setActiveRef(null)} />
+      <RefPanel activeRef={activeRef} onClose={() => setActiveRef(null)} mode={mode} />
     </div>
   );
 }
